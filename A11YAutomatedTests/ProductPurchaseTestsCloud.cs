@@ -33,9 +33,14 @@ public class ProductPurchaseTestsCloud
             { "w3c", "true" },
             { "plugin", "c#-c#" },
             { "build", buildName },
+            { "performance", "true" },
             { "project", "A11Y_RUN" },
             { "selenium_version", "4.22.0" },
             //{ "idleTimeout", "300" }
+            { "accessibility", "true" }, // Enable accessibility testing
+            { "accessibility.wcagVersion", "wcag21a" }, // Specify WCAG version (e.g., WCAG 2.1 Level A)
+            { "accessibility.bestPractice", "false" }, // Exclude best practice issues from results
+            { "accessibility.needsReview", "true" },  // Include issues that need review
         };
 
         _driver = new RemoteWebDriver(new Uri($"https://{userName}:{accessKey}@hub.lambdatest.com/wd/hub"), options);
