@@ -1,13 +1,15 @@
 ﻿using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using A11YAutomatedTests.Accessibility;
 
 namespace A11YAutomatedTests;
 
 [TestFixture]
 public class ProductPurchaseTestsCloud
 {
-    private IWebDriver _driver;
+    private RemoteWebDriver _driver;
     private WebSite _webSite;
+    private LighthouseService _lighthouseService;
 
     [SetUp]
     public void TestInit()
@@ -33,13 +35,13 @@ public class ProductPurchaseTestsCloud
             { "w3c", "true" },
             { "plugin", "c#-c#" },
             { "build", buildName },
-            { "performance", "true" },
+            //{ "performance", "true" },
             { "project", "A11Y_RUN" },
             { "selenium_version", "4.22.0" },
             //{ "idleTimeout", "300" }
             { "accessibility", "true" }, // Enable accessibility testing
             { "accessibility.wcagVersion", "wcag21a" }, // Specify WCAG version (e.g., WCAG 2.1 Level A)
-            { "accessibility.bestPractice", "false" }, // Exclude best practice issues from results
+            { "accessibility.bestPractice", "true" }, // Exclude best practice issues from results
             { "accessibility.needsReview", "true" },  // Include issues that need review
         };
 
@@ -59,7 +61,7 @@ public class ProductPurchaseTestsCloud
     }
 
     [Test]
-    public void CorrectInformationDisplayedInCompareScreen_WhenOpenProductFromSearchResults_TwoProducts()
+    public void CorrectInformationDisplayedInCompareScreen_CheckA11Y_LambdaTestA11YAutomation()
     {
         // Arrange
         var expectedProduct1 = new ProductDetails
@@ -91,13 +93,23 @@ public class ProductPurchaseTestsCloud
 
         _webSite.ProductPage.GoToComparePage();
 
-        _webSite.ProductPage.AssertCompareProductDetails(expectedProduct1, 1);
-        _webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
+        //_webSite.ProductPage.AssertCompareProductDetails(expectedProduct1, 1);
+        //_webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
+
+        // call SDK to get results from LT Accessibility - if there any failures
+        // fail test with message and point to the portal.
+        var sessionApiClient = new SessionApiClient();
+        var accessibilityApiClient = new AccessibilityApiClient();
+        var currentSession = sessionApiClient.GetSessionDetailsAsync(_driver.SessionId.ToString()).Result;
+        var accessibilityResults = accessibilityApiClient.GetTestIssueDataAsync(currentSession.Data.Data.TestId).Result;
+
+        Assert.That(accessibilityResults.TestInfo.TotalIssues, Is.EqualTo(0), $"{accessibilityResults.ScanJson.First().IssueSummary} /n Check LT A11Y Automation Dashboard for more details!");
     }
 
     [Test]
-    public void PurchaseTwoSameProduct()
+    public void CorrectInformationDisplayedInCompareScreen_CheckA11Y_GoogleLighthouse()
     {
+        // Arrange
         var expectedProduct1 = new ProductDetails
         {
             Name = "iPod Touch",
@@ -105,46 +117,36 @@ public class ProductPurchaseTestsCloud
             Price = "$194.00",
             Model = "Product 5",
             Brand = "Apple",
-            Weight = "5.00kg",
-            Quantity = "2"
+            Weight = "5.00kg"
         };
 
-        var userDetails = new UserDetails
+        var expectedProduct2 = new ProductDetails
         {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "johndoe@example.com",
-            Telephone = "1234567890",
-            Password = "password123",
-            ConfirmPassword = "password123",
-            AccountType = AccountOption.Register
-        };
-
-        var billingAddress = new BillingAddress
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Company = "Acme Corp",
-            Address1 = "123 Main St",
-            Address2 = "Apt 4",
-            City = "Metropolis",
-            PostCode = "12345",
-            Country = "United States",
-            Region = "Alabama"
+            Name = "iPod Shuffle",
+            Id = 34,
+            Price = "$182.00",
+            Model = "Product 7",
+            Brand = "Apple",
+            Weight = "5.00kg"
         };
 
         _webSite.HomePage.SearchProduct("ip");
         _webSite.ProductPage.SelectProductFromAutocomplete(expectedProduct1.Id);
-        _webSite.ProductPage.AddToCart(expectedProduct1.Quantity);
-        _webSite.CartPage.ViewCart();
-        _webSite.CartPage.AssertTotalPrice("$388.00");
+        _webSite.ProductPage.CompareLastProduct();
+        _webSite.HomePage.SearchProduct("ip");
+        _webSite.ProductPage.SelectProductFromAutocomplete(expectedProduct2.Id);
+        _webSite.ProductPage.CompareLastProduct();
 
-        _webSite.CartPage.Checkout();
-        _webSite.CheckoutPage.FillUserDetails(userDetails);
-        _webSite.CheckoutPage.FillBillingAddress(billingAddress);
-        _webSite.CheckoutPage.AssertTotalPrice("$396.00");
+        _webSite.ProductPage.GoToComparePage();
 
-        _webSite.CheckoutPage.AgreeToTerms();
-        _webSite.CheckoutPage.CompleteCheckout();
+        _lighthouseService.PerformLighthouseAnalysis();
+
+        _lighthouseService.AssertAccessibilityScoreAboveThan(0.4);
+        _lighthouseService.AssertAriaAllowedAttributesValid();
+        _lighthouseService.AssertAriaHiddenFocusValid();
+        _lighthouseService.AssertColorContrastValid();
+        _lighthouseService.AssertImageAltValid();
+        _lighthouseService.AssertLinkNameValid();
+        _lighthouseService.AssertMetric(_ => _lighthouseService.PerformanceReport.Value.Audits.ColorContrast.Score > 0.2);
     }
 }

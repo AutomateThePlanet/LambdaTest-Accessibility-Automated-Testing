@@ -2,13 +2,14 @@
 using RestSharp.Authenticators;
 using System;
 using System.Threading.Tasks;
+using A11YAutomatedTests.Accessibility;
 
 namespace A11YAutomatedTests;
 public class AccessibilityApiClient
 {
     private readonly RestClient _client;
 
-    public AccessibilityApiClient(string baseUrl, string username, string password)
+    public AccessibilityApiClient()
     {
         var userName = Environment.GetEnvironmentVariable("LT_USERNAME", EnvironmentVariableTarget.Machine);
         var accessKey = Environment.GetEnvironmentVariable("LT_ACCESSKEY", EnvironmentVariableTarget.Machine);
@@ -26,7 +27,7 @@ public class AccessibilityApiClient
         //_client.UseNewtonsoftJson();
     }
 
-    public async Task<RestResponse> GetTestIssueDataAsync(string testId, string impact = null, bool? bestPractice = null, bool? needsReview = null)
+    public async Task<Root> GetTestIssueDataAsync(string testId, string impact = null, bool? bestPractice = null, bool? needsReview = null)
     {
         // Set up the request for the 'Get Test Issue Data' endpoint
         var request = new RestRequest("/api/v1/test-issue", Method.Get);
@@ -48,7 +49,7 @@ public class AccessibilityApiClient
             request.AddQueryParameter("needsReview", needsReview.ToString());
         }
 
-        var response = await _client.ExecuteAsync(request);
-        return response;
+        var response = await _client.ExecuteAsync<Root>(request);
+        return response.Data;
     }
 }

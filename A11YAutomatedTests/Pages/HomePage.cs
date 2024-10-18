@@ -7,6 +7,7 @@ public class HomePage : WebPage
     }
 
     public IWebElement SearchInput => _driver.FindElement(By.XPath("//input[@name='search']"));
+    public IWebElement MainHeader => _driver.FindElement(By.Id("main-header"));
 
     public void SearchProduct(string searchText)
     {

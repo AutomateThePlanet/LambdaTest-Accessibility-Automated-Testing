@@ -1,4 +1,8 @@
-﻿using OpenQA.Selenium.Chrome;
+﻿using Deque.AxeCore.Commons;
+using Deque.AxeCore.Selenium;
+using FluentAssertions;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 using WebDriverManager.DriverConfigs.Impl;
 
 namespace A11YAutomatedTests;
@@ -8,6 +12,7 @@ public class ProductPurchaseTests
 {
     private IWebDriver _driver;
     private WebSite _webSite;
+    private AxeBuilder _axeBuilder;
 
     [SetUp]
     public void TestInit()
@@ -20,6 +25,7 @@ public class ProductPurchaseTests
         _driver.Manage().Cookies.DeleteAllCookies();
 
         _webSite = new WebSite(_driver);
+        _axeBuilder = new AxeBuilder(_driver);
     }
 
     [TearDown]
@@ -52,6 +58,8 @@ public class ProductPurchaseTests
             Weight = "5.00kg"
         };
 
+        AxeResult axeResult = _axeBuilder.Analyze(_webSite.HomePage.MainHeader);
+
         _webSite.HomePage.SearchProduct("ip");
         _webSite.ProductPage.SelectProductFromAutocomplete(expectedProduct1.Id);
         _webSite.ProductPage.CompareLastProduct();
@@ -63,6 +71,27 @@ public class ProductPurchaseTests
 
         _webSite.ProductPage.AssertCompareProductDetails(expectedProduct1, 1);
         _webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
+
+        axeResult = _axeBuilder
+            .WithRules("color-contrast", "duplicate-id")
+            .WithTags("wcag2a")
+            //.DisableRules("color-contrast")
+            .Analyze();
+
+        Assert.That(axeResult.Violations.Any(), Is.False);
+
+        axeResult.Violations.Should().BeEmpty();
+
+        // If you don't want to run Axe on iFrames you can tell Axe skip with AxeRunOptions.
+        // Exclude may be combined with Include to scan a tree of elements but omit some children of that tree.
+        //_axeBuilder
+        //    .Include("#element-under-test")
+        //    .Exclude("#element-under-test div.child-class-with-known-issues")
+        //    .WithOptions(new AxeRunOptions()
+        //    {
+        //        Iframes = false
+        //    })
+        //    .Analyze();
     }
 
     [Test]
