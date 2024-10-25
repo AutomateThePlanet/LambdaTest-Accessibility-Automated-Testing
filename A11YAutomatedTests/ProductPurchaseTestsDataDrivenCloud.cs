@@ -70,7 +70,8 @@ public class ProductPurchaseTestsDataDrivenCloud
     [TearDown]
     public void TestCleanup()
     {
-        _driver.Quit();
+        _driver?.Quit();
+        _driver?.Dispose();
     }
 
     [Test]

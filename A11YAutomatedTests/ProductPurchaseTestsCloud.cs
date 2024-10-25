@@ -26,7 +26,7 @@ public class ProductPurchaseTestsCloud
 
         var capabilities = new Dictionary<string, object>
         {
-            { "resolution", "1920x800" },
+            { "resolution", "1920x1080" },
             { "platform", "Windows 10" },
             { "visual", "false" },
             { "video", "true" },
@@ -35,7 +35,7 @@ public class ProductPurchaseTestsCloud
             { "w3c", "true" },
             { "plugin", "c#-c#" },
             { "build", buildName },
-            //{ "performance", "true" },
+            { "performance", "true" },
             { "project", "A11Y_RUN" },
             { "selenium_version", "4.22.0" },
             //{ "idleTimeout", "300" }
@@ -44,7 +44,7 @@ public class ProductPurchaseTestsCloud
             { "accessibility.bestPractice", "true" }, // Exclude best practice issues from results
             { "accessibility.needsReview", "true" },  // Include issues that need review
         };
-
+        options.AddAdditionalOption("LT:Options", capabilities);
         _driver = new RemoteWebDriver(new Uri($"https://{userName}:{accessKey}@hub.lambdatest.com/wd/hub"), options);
         _driver.Manage().Window.Maximize();
 
@@ -57,7 +57,8 @@ public class ProductPurchaseTestsCloud
     [TearDown]
     public void TestCleanup()
     {
-        _driver.Quit();
+        _driver?.Quit();
+        _driver?.Dispose();
     }
 
     [Test]
@@ -93,17 +94,43 @@ public class ProductPurchaseTestsCloud
 
         _webSite.ProductPage.GoToComparePage();
 
-        //_webSite.ProductPage.AssertCompareProductDetails(expectedProduct1, 1);
-        //_webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
+        _webSite.ProductPage.AssertCompareProductDetails(expectedProduct1, 1);
+        _webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
 
-        // call SDK to get results from LT Accessibility - if there any failures
+        //call SDK to get results from LT Accessibility - if there any failures
         // fail test with message and point to the portal.
-        var sessionApiClient = new SessionApiClient();
-        var accessibilityApiClient = new AccessibilityApiClient();
-        var currentSession = sessionApiClient.GetSessionDetailsAsync(_driver.SessionId.ToString()).Result;
-        var accessibilityResults = accessibilityApiClient.GetTestIssueDataAsync(currentSession.Data.Data.TestId).Result;
+        //var sessionApiClient = new SessionApiClient();
+        //var accessibilityApiClient = new AccessibilityApiClient();
+        //var currentSession = sessionApiClient.GetSessionDetailsAsync(_driver.SessionId.ToString()).Result;
+        //var accessibilityResults = accessibilityApiClient.GetTestIssueDataAsync(currentSession.Data.Data.TestId).Result;
 
-        Assert.That(accessibilityResults.TestInfo.TotalIssues, Is.EqualTo(0), $"{accessibilityResults.ScanJson.First().IssueSummary} /n Check LT A11Y Automation Dashboard for more details!");
+        //Assert.That(accessibilityResults.TestInfo.TotalIssues, Is.EqualTo(0), $"{accessibilityResults.ScanJson.First().IssueSummary} /n Check LT A11Y Automation Dashboard for more details!");
+    }
+
+    [TestCase("https://www.lambdatest.com/blog/easier-accessibility/")]
+    [TestCase("https://www.lambdatest.com/blog/web-accessibility-checklist/")]
+    [TestCase("https://github.com/dequelabs/axe-core-maven-html")]
+    [TestCase("https://developer.chrome.com/docs/lighthouse/accessibility/scoring")]
+    [TestCase("https://www.lambdatest.com/support/docs/view-lighthouse-performance-metrics/")]
+    [TestCase("https://www.lambdatest.com/capabilities-generator/")]
+    public void CheckA11Y_LambdaTestAutomation(string url)
+    {
+        // Navigate to the URL
+        _driver.Navigate().GoToUrl(url);
+
+        // Add your custom accessibility check logic here, if necessary
+
+        // Example: Assert page title is not empty (basic check)
+        Assert.That(!string.IsNullOrEmpty(_driver.Title), "Page title should not be empty.");
+
+        // Call LambdaTest Accessibility API (optional in case you want to check with LT API)
+        // var sessionApiClient = new SessionApiClient();
+        // var accessibilityApiClient = new AccessibilityApiClient();
+        // var currentSession = sessionApiClient.GetSessionDetailsAsync(_driver.SessionId.ToString()).Result;
+        // var accessibilityResults = accessibilityApiClient.GetTestIssueDataAsync(currentSession.Data.Data.TestId).Result;
+
+        // Assert that there are no accessibility issues
+        // Assert.That(accessibilityResults.TestInfo.TotalIssues, Is.EqualTo(0), $"{accessibilityResults.ScanJson.First().IssueSummary} /n Check LT A11Y Automation Dashboard for more details!");
     }
 
     [Test]

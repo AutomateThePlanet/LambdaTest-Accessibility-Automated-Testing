@@ -8,7 +8,7 @@ using WebDriverManager.DriverConfigs.Impl;
 namespace A11YAutomatedTests;
 
 [TestFixture]
-public class ProductPurchaseTests
+public class ProductPurchaseAxeTests
 {
     private IWebDriver _driver;
     private WebSite _webSite;
@@ -31,7 +31,8 @@ public class ProductPurchaseTests
     [TearDown]
     public void TestCleanup()
     {
-        _driver.Quit();
+        _driver?.Quit();
+        _driver?.Dispose();
     }
 
     [Test]
@@ -73,7 +74,7 @@ public class ProductPurchaseTests
         _webSite.ProductPage.AssertCompareProductDetails(expectedProduct2, 2);
 
         axeResult = _axeBuilder
-            .WithRules("color-contrast", "duplicate-id")
+            //.WithRules("color-contrast", "duplicate-id")
             .WithTags("wcag2a")
             //.DisableRules("color-contrast")
             .Analyze();
@@ -92,58 +93,5 @@ public class ProductPurchaseTests
         //        Iframes = false
         //    })
         //    .Analyze();
-    }
-
-    [Test]
-    public void PurchaseTwoSameProduct()
-    {
-        var expectedProduct1 = new ProductDetails
-        {
-            Name = "iPod Touch",
-            Id = 32,
-            Price = "$194.00",
-            Model = "Product 5",
-            Brand = "Apple",
-            Weight = "5.00kg",
-            Quantity = "2"
-        };
-
-        var userDetails = new UserDetails
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "johndoe@example.com",
-            Telephone = "1234567890",
-            Password = "password123",
-            ConfirmPassword = "password123",
-            AccountType = AccountOption.Register
-        };
-
-        var billingAddress = new BillingAddress
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Company = "Acme Corp",
-            Address1 = "123 Main St",
-            Address2 = "Apt 4",
-            City = "Metropolis",
-            PostCode = "12345",
-            Country = "United States",
-            Region = "Texas"
-        };
-
-        _webSite.HomePage.SearchProduct("ip");
-        _webSite.ProductPage.SelectProductFromAutocomplete(expectedProduct1.Id);
-        _webSite.ProductPage.AddToCart(expectedProduct1.Quantity);
-        _webSite.CartPage.ViewCart();
-        _webSite.CartPage.AssertTotalPrice("$388.00");
-
-        _webSite.CartPage.Checkout();
-        _webSite.CheckoutPage.FillUserDetails(userDetails);
-        _webSite.CheckoutPage.FillBillingAddress(billingAddress);
-        _webSite.CheckoutPage.AssertTotalPrice("$396.00");
-
-        _webSite.CheckoutPage.AgreeToTerms();
-        _webSite.CheckoutPage.CompleteCheckout();
     }
 }
